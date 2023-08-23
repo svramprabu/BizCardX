@@ -91,6 +91,6 @@ if st.button("Click to load details into SQLite db"):
 else:
     # st.write("")
     # st.write("Browse and upload files to begin")
-    st.write('Check for corrections in the content in sidebar before loading into db!')
+    st.write('Please make the necessary corrections in the content in sidebar before loading into db!')
 
 
