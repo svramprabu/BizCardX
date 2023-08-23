@@ -4,85 +4,84 @@ import easyocr
 from PIL import Image
 import re
 import pandas as pd 
+import sqlite3
+
+conn = sqlite3.connect('bizcard_database.db')
+cursor = conn.cursor()
+# cursor.execute('DROP table IF EXISTS bizcard_details')
 
 st.title("Extracting Business Card Data with OCR")
+st.toast('Loading Your data into db!', icon='😍')
 
 def upload_n_x_data(uploaded_file):
-    # st.image(uploaded_file)
-    # IMAGE_PATH = r'C:\Users\SVR\Documents\GitHub\BizCardX\card_uploads\1.png'
-    st.image(Image.open(uploaded_file))
+    
+    st.sidebar.image(Image.open(uploaded_file))
     IMAGE_PATH = uploaded_file.getvalue() 
-    # if uploaded_file is not None:
-        # To read file as bytes:
     reader = easyocr.Reader(['en'])
-    # result = reader.readtext(IMAGE_PATH,paragraph="True")
     result = reader.readtext(IMAGE_PATH,paragraph="False")
-    # result
+    
     data_from_card=[]
     for key in range(len(result)):
         data_from_card.append(result[key][1])
         # break
     return data_from_card 
-uploaded_file = st.file_uploader("Choose a file")
+
+uploaded_file = st.file_uploader("Choose the Business card image file")
+
 if uploaded_file is not None:
  
     details_in_card = upload_n_x_data(uploaded_file)
-    details_in_card
+    # details_in_card
+    
     string_of_details=""
     for x in details_in_card:
         string_of_details=string_of_details+' '+x
     # string_of_details
+    
     details_dict={'email':['none'],'contact_no':['none'],'address':['none'],'website':['none'],'name':['none'],'designation':['none'],'company_name':['none']}
-    k=0
-    # details_dict['name+designation']=[details_in_card[0].split()]
+    
     for each_detail in details_in_card:
         if re.findall("\w*@\w*.com",each_detail):
             details_dict['email']=re.findall("\w*@\w*.com",each_detail)
         if re.findall("\d{3}-\d{3}-\d{4}",each_detail):        
             details_dict['contact_no']=[' '.join(map(str, (re.findall("\+*\d{3}-\d{3}-\d{4}",each_detail))))]
         if re.search("\d+ [\d\w ,;]+",each_detail):
-        # st.write(re.findall("\d+ [\d\w ,;]+",each_detail))
             details_dict['address']=re.findall("\d+ [\d\w ,;]+",each_detail)
         if re.search("[w|W]{3}[. ]\w+[. ]*com",each_detail):
             details_dict['website']=re.findall("[w|W]{3}[. ]\w+[. ]*com",each_detail)
-    #     else: 
-    #         details_dict[f'other{k}']=each_detail
-    #         k+=1
+   
 
-    # for each_detail in range(len(details_in_card)):
-        # drop_input = st.selectbox('what input is this?',['name','designation','company_name'],key = f'{each_detail}123')
-    details_dict['name']=st.text_input('name details in card',value=f"{string_of_details}",key = "name",help="please check the content and make corrections if any")             
-    details_dict['designation']=st.text_input('designation details in card',value=f"{string_of_details}",key = "designation",help="please check the content and make corrections if any")             
-    details_dict['company_name']=st.text_input('company details in card',value=f"{string_of_details}",key = "company_name",help="please check the content and make corrections if any")             
-        # st.write("\n")
-        # st.write("\n")
-        # st.write("\n")
-        # break
+    details_dict['name']=st.sidebar.text_input('name details in card',value=f"{string_of_details}",key = "name",help="please check the content and make corrections if any")             
+    details_dict['designation']=st.sidebar.text_input('designation details in card',value=f"{string_of_details}",key = "designation",help="please check the content and make corrections if any")             
+    details_dict['company_name']=st.sidebar.text_input('company details in card',value=f"{string_of_details}",key = "company_name",help="please check the content and make corrections if any")             
+    details_dict['email']=st.sidebar.text_input('email details in card',value=f"{details_dict['email'][0]}",key = "email",help="please check the content and make corrections if any")             
+    details_dict['contact_no']=st.sidebar.text_input('contact_no details in card',value=f"{details_dict['contact_no'][0]}",key = "contact_no",help="please check the content and make corrections if any")             
+    details_dict['address']=st.sidebar.text_input('address details in card',value=f"{details_dict['address'][0]}",key = "address",help="please check the content and make corrections if any")             
+    details_dict['website']=st.sidebar.text_input('website details in card',value=f"{details_dict['website'][0]}",key = "website",help="please check the content and make corrections if any")             
 
-    # drop_input = st.selectbox('what input is this?',['name','designation','company_name'],key = f'{each_detail}123')
-
-    # details_dict[f'{drop_input}']= st.text_input('details in card',value=f"{details_dict[f'{drop_input}']}",key = f"{each_detail}143",help="please check the content and make corrections if any")
-
-    details_dict  
-
-    df = pd.DataFrame.from_dict(details_dict)
+    df = pd.DataFrame(details_dict,index=[0])
+    st.write("you may also edit details from below table")
     edited_df = st.experimental_data_editor(df)   
-
-    import sqlite3
-
-    # Connect to the database
-    conn = sqlite3.connect('bizcard_database.db')
-
-    # Create a cursor object to execute SQL queries
-    cursor = conn.cursor()
-    # edited_df.to_sql('bizcard_details', conn, if_exists='append', index=False)
-    edited_df.to_sql('bizcard_details', conn, if_exists='replace', index=False)
-    # insert_query = '''
-    # INSERT INTO bizcard_details (name, age, email)
-    # VALUES (?, ?, ?)
-    # '''
+    
+if st.button("Click to details into SQLite db"):    
+    
+    # cursor.execute('DROP table bizcard_details if exists')
+    # conn.commit()
+    sql = 'create table if not exists ' + 'bizcard_details' + ' (email TEXT PRIMARY KEY, contact_no TEXT, address TEXT, website TEXT, name TEXT, designation TEXT, company_name TEXT)'
+    cursor.execute(sql)
+    
+    insert_query = '''
+    INSERT OR REPLACE INTO bizcard_details (email, contact_no, address , website , name , designation , company_name )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    '''
+    val=tuple(edited_df.loc[0])
+    cursor.execute(insert_query,val)
+    conn.commit()
 
     df = pd.read_sql_query('SELECT * FROM bizcard_details', conn)
     conn.close()
     df
+
+else:
+    st.write("")
 
