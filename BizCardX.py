@@ -27,9 +27,9 @@ def upload_n_x_data(uploaded_file):
     return data_from_card 
 
 uploaded_file = st.file_uploader("Choose the Business card image file")
-st.toast('Extracting details from image!', icon='🎯')
 
 if uploaded_file is not None:
+    st.toast('Extracting details from image!', icon='🎯')
  
     details_in_card = upload_n_x_data(uploaded_file)
     # details_in_card
@@ -39,7 +39,7 @@ if uploaded_file is not None:
         string_of_details=string_of_details+' '+x
     # string_of_details
     
-    details_dict={'email':['none'],'contact_no':['none'],'address':['none'],'website':['none'],'name':['none'],'designation':['none'],'company_name':['none']}
+    details_dict={'name':['none'],'designation':['none'],'company_name':['none'],'email':['none'],'contact_no':['none'],'address':['none'],'website':['none'],}
     
 
     for each_detail in details_in_card:
@@ -65,7 +65,11 @@ if uploaded_file is not None:
 
     df = pd.DataFrame(details_dict,index=[0])
     st.write("you may also edit details from below table")
-    edited_df = st.data_editor(df)   
+    edited_df = st.data_editor(df)
+
+    if st.sidebar.button("clear database"):
+        cursor.execute('DROP TABLE IF EXISTS bizcard_details')
+        conn.commit()
     
 if st.button("Click to load details into SQLite db"):    
     
@@ -73,7 +77,7 @@ if st.button("Click to load details into SQLite db"):
     # conn.commit()
     st.toast('Loading details into db!', icon='🎉')
 
-    sql = 'create table if not exists ' + 'bizcard_details' + ' (email TEXT PRIMARY KEY, contact_no TEXT, address TEXT, website TEXT, name TEXT, designation TEXT, company_name TEXT)'
+    sql = 'create table if not exists bizcard_details (email TEXT PRIMARY KEY, contact_no TEXT, address TEXT, website TEXT, name TEXT, designation TEXT, company_name TEXT)'
     cursor.execute(sql)
     
     insert_query = '''
