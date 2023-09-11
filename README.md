@@ -51,7 +51,7 @@ To use BizcardX, follow these steps:
 
 ## License
 
-This project is a free to use public repository [Public Repo](LICENSE).
+This project is a free to use public repository.
 
 ---
 
